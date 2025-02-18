@@ -1,0 +1,45 @@
+data_version: 128_128_eA_w03_c01
+model_name : classifier
+
+mlflow_parameters:
+  tracking_uri: http://127.0.0.1:5000
+  experiment_name: Seizure Detection
+
+
+data_parameters:
+  seed: 0
+  split_proportions: [0.7, 0.2, 0.1]
+
+  # Dataloaders parameters
+  batch_size: 16
+  num_workers: 0
+  pin_memory: True
+  
+  # Augmentation
+
+
+# Training hyperparameters
+model_parameters:
+  device: cuda
+  in_channels: 1
+  num_classes: 2
+  dropout: 0.1
+
+  num_epochs: 2
+
+  # Hyperparameters for SGD
+  learning_rate: 0.01
+  weight_decay: 0.00001
+
+  # lr_scheduler: cosine  
+  # t_max: 30
+  # eta_min: 0.00001
+
+  lr_scheduler: step
+  step_size: 20
+  gamma: 0.2
+
+  # Parameters for stoppers
+  init_stopper_patience: 10
+  early_stopper_patience: 20
+  early_stopper_min_delta: 1
