@@ -1,7 +1,22 @@
+import random
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-                                                                                
+
+def sample_data(data: tuple, fraction: float) -> tuple:
+    if fraction != 1:
+        x, y = data
+        sample_size = int(len(x) * fraction)
+
+        indices = random.sample(range(len(x)), sample_size)  # Losowy wybór indeksów
+        x_subset = np.array([x[i] for i in indices])
+        y_subset = np.array([y[i] for i in indices])
+
+        data = (x_subset, y_subset)
+
+    return data
+
+
 def split_data_by_proportions(data: tuple, parameters: dict) -> dict:
     x, y = data
     proportions = np.array(parameters["split_proportions"])

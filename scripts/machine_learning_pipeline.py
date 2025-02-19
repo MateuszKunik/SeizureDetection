@@ -11,6 +11,7 @@ from core.utils import load_model_input_data
 
 from core.machine_learning import (
     setup_mlflow,
+    sample_data,
     split_data_by_proportions,
     create_dataloaders,
     setup_and_train_model,
@@ -21,6 +22,7 @@ from core.machine_learning import (
     prepare_directory,
     log_model_artifacts
 )
+
 
 
 project_manager = ProjectManager()
@@ -34,6 +36,9 @@ model_params = config_manager.load_config("parameters_machine_learning")
 
 model_input_data = load_model_input_data(
     primary_data_path, model_params["data_version"])
+
+model_input_data = sample_data(model_input_data, model_params["data_parameters"]["data_fraction"])
+
 
 setup_mlflow(model_params["mlflow_parameters"])
 

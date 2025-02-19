@@ -87,9 +87,9 @@ def initialize_training_components(model, model_parameters):
 
 def initialize_metrics():
     loss_fn = BCEWithLogitsLoss()
-    accuracy = BinaryAccuracy()
+    accuracy_fn = BinaryAccuracy()
 
-    return loss_fn, accuracy
+    return loss_fn, accuracy_fn
     
 
 def initialize_callbacks(model_parameters):
@@ -180,7 +180,9 @@ def perform_step(
             features, targets = transfer_to_device(features, targets, device)
             predictions = model(features)
 
-            accumulated_accuracy += accuracy_fn(targets, predictions)
+            accuracy = accuracy_fn(targets, predictions)
+            accumulated_accuracy += accuracy
+
             loss = loss_fn(targets, predictions)
             accumulated_loss += loss.item()
 

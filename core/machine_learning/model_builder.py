@@ -31,31 +31,44 @@ class STConvNet(nn.Module):
                 - Fully connected (fc) layer for classification.
         """
         super().__init__()
-        self.net = nn.Sequential(
+        self.convolutional_net = nn.Sequential(
             # conv1
             Conv2Plus1D(in_channels, 64, (3, 7, 7), (1, 2, 2), (1, 3, 3)),
-            nn.LeakyReLU(inplace=True),
+            nn.BatchNorm3d(64),
+            nn.ReLU(inplace=True),
             # conv2_x
             Conv2Plus1D(64, 64, (3, 3, 3), (1, 1, 1), (1, 1, 1)),
-            nn.LeakyReLU(inplace=True),
+            nn.BatchNorm3d(64),
+            nn.ReLU(inplace=True),
             # conv3_x
             Conv2Plus1D(64, 128, (3, 3, 3), (2, 2, 2), (1, 1, 1)),
-            nn.LeakyReLU(inplace=True),
+            nn.BatchNorm3d(128),
+            nn.ReLU(inplace=True),
             # conv4_x
             Conv2Plus1D(128, 256, (3, 3, 3), (2, 2, 2), (1, 1, 1)),
-            nn.LeakyReLU(inplace=True),
+            nn.BatchNorm3d(256),
+            nn.ReLU(inplace=True),
             # conv5_x
             Conv2Plus1D(256, 512, (3, 3, 3), (2, 2, 2), (1, 1, 1)),
-            nn.LeakyReLU(inplace=True),
+            nn.BatchNorm3d(512),
+            nn.ReLU(inplace=True),
+
             nn.AdaptiveAvgPool3d((1, 1, 1)),
             nn.Flatten(),
-            nn.Linear(512, num_classes),
+        )
+
+        self.classifier = nn.Sequential(
+            nn.Linear(512, 256),
+            nn.ReLU(inplace=True),
+            nn.Dropout(dropout),
+
+            nn.Linear(256, num_classes)
         )
 
 
     def forward(self, x):
-        return self.net(x)
-
+        x = self.convolutional_net(x)
+        return self.classifier(x)
 
 
 class Conv2Plus1D(nn.Module):
