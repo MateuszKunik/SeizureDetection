@@ -4,7 +4,7 @@ from torch.nn import BCEWithLogitsLoss
 from torch.optim import SGD
 from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR
 
-from .model_builder import STConvNet
+from .model_builder import SimpleNet, STConvNet
 from .accuracy import BinaryAccuracy
 from .callbacks import InitStopper, EarlyStopper
 
@@ -54,10 +54,15 @@ def setup_and_train_model(
     
 
 def initialize_model(model_parameters):
-    model = STConvNet(
+    model = SimpleNet(
         in_channels=model_parameters["in_channels"],
         num_classes=model_parameters["num_classes"],
-        dropout=model_parameters["dropout"])
+        dropout=model_parameters["dropout"]) 
+
+    # model = STConvNet(
+    #     in_channels=model_parameters["in_channels"],
+    #     num_classes=model_parameters["num_classes"],
+    #     dropout=model_parameters["dropout"])
 
     return model.to(model_parameters["device"])
 

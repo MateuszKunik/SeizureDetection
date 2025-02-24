@@ -1,13 +1,67 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 
+class SimpleNet(nn.Module):
+    def __init__(
+            self,
+            in_channels: int = 1,
+            num_classes: int = 2,
+            dropout: float = 0
+    ):
+        super().__init__()
+        self.conv_net = nn.Sequential(
+            Conv2Plus1D(in_channels, 16, (3, 3, 3), (1, 1, 1), (1, 1, 1)),
+            nn.BatchNorm3d(16),
+            nn.ReLU(inplace=True),
+            nn.MaxPool3d((2, 2, 2), (2, 2, 2)),
+            #nn.Dropout(dropout),
+
+            Conv2Plus1D(16, 32, (3, 3, 3), (1, 1, 1), (1, 1, 1)),
+            nn.BatchNorm3d(32),
+            nn.ReLU(inplace=True),
+            nn.MaxPool3d((2, 2, 2), (2, 2, 2)),
+            #nn.Dropout(dropout),
+
+            Conv2Plus1D(32, 64, (3, 3, 3), (1, 1, 1), (1, 1, 1)),
+            nn.BatchNorm3d(64),
+            nn.ReLU(inplace=True),
+            nn.MaxPool3d((2, 2, 2), (2, 2, 2)),
+            #nn.Dropout(dropout),
+        )
+
+        self.global_pool = nn.AdaptiveAvgPool3d((1, 1, 1))
+
+        self.fc = nn.Sequential(
+            nn.Linear(64, 128),
+            nn.ReLU(inplace=True),
+            nn.Dropout(dropout),
+
+            nn.Linear(128, 32),
+            nn.ReLU(inplace=True),
+            nn.Dropout(dropout),
+
+            nn.Linear(32, num_classes)
+        )
+
+
+    def forward(self, x):
+        x = self.conv_net(x)
+        x = self.global_pool(x)
+        x = torch.flatten(x, start_dim=1)
+        
+        return self.fc(x)
+    
+
+    
+
 class STConvNet(nn.Module):
     def __init__(
-        self,
-        in_channels: int = 1,
-        num_classes: int = 2,
-        dropout: float = 0
+            self,
+            in_channels: int = 1,
+            num_classes: int = 2,
+            dropout: float = 0
     ):
         """
         Pytorch implementation of the R(2+1)D convolutional model for spatiotemporal data
