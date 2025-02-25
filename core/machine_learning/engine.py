@@ -1,6 +1,6 @@
 import torch
 from tqdm.auto import tqdm
-from torch.nn import BCEWithLogitsLoss
+from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss
 from torch.optim import SGD
 from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR
 
@@ -91,7 +91,7 @@ def initialize_training_components(model, model_parameters):
 
 
 def initialize_metrics():
-    loss_fn = BCEWithLogitsLoss()
+    loss_fn = CrossEntropyLoss()
     accuracy_fn = BinaryAccuracy()
 
     return loss_fn, accuracy_fn
@@ -184,11 +184,11 @@ def perform_step(
         for features, targets in dataloader:
             features, targets = transfer_to_device(features, targets, device)
             predictions = model(features)
-
+            # print(features.shape, targets.shape, predictions.shape)
             accuracy = accuracy_fn(targets, predictions)
             accumulated_accuracy += accuracy
 
-            loss = loss_fn(targets, predictions)
+            loss = loss_fn(predictions, targets)
             accumulated_loss += loss.item()
 
             if optimizer:

@@ -8,7 +8,7 @@ from datetime import datetime
 def load_model_input_data(data_directory_path: str, data_version: str) -> tuple:
     data_file_path = os.path.join(data_directory_path, f"{data_version}.hdf5")
     with h5py.File(data_file_path, 'r') as file:
-        data = (file["X"][:], file["Y_encoded"][:])
+        data = (file["X"][:], file["Y"][:])
         
     return data
 

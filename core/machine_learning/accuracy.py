@@ -18,7 +18,7 @@ class BinaryAccuracy(nn.Module):
     
 
     def get_actual_labels(self, targets):
-        if targets.size(1) > 1:
+        if len(targets.shape) > 1:
             actual_labels = torch.argmax(targets, dim=1)
         else:
             actual_labels = targets.int()

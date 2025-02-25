@@ -21,8 +21,9 @@ class CustomDataset(Dataset):
     
 
     def __getitem__(self, index):
-        features = self.features[index, :, :, :].unsqueeze(0)
-        target = self.targets[index]
+        features = self.features[index, :, :, :]
+        features = features.permute(3, 0, 1, 2)
+        target = self.targets[index].long()
         
         if self.transform:
             features = self.transform(features)
