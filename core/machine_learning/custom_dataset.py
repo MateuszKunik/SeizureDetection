@@ -12,9 +12,10 @@ class CustomDataset(Dataset):
     ):
         super().__init__()
         self.features = torch.from_numpy(data[0]).float()
-        self.targets = torch.from_numpy(data[1]).float()
+        self.targets = torch.from_numpy(data[1]).long()
         self.transform = transform
         self.augmentation = augmentation
+
 
     def __len__(self):
         return self.features.shape[0]
@@ -22,8 +23,7 @@ class CustomDataset(Dataset):
 
     def __getitem__(self, index):
         features = self.features[index, :, :, :]
-        features = features.permute(3, 0, 1, 2)
-        target = self.targets[index].long()
+        target = self.targets[index]
         
         if self.transform:
             features = self.transform(features)

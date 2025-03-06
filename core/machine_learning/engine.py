@@ -4,7 +4,7 @@ from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss
 from torch.optim import SGD
 from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR
 
-from .model_builder import SimpleNet, STConvNet
+from .model_builder import TinyVGG, AlaResNet18, R2Plus1DConvNet, Simple2Plus1DConvNet, Simple3DConvNet
 from .accuracy import BinaryAccuracy
 from .callbacks import InitStopper, EarlyStopper
 
@@ -54,15 +54,10 @@ def setup_and_train_model(
     
 
 def initialize_model(model_parameters):
-    model = SimpleNet(
+    model = R2Plus1DConvNet(
         in_channels=model_parameters["in_channels"],
         num_classes=model_parameters["num_classes"],
         dropout=model_parameters["dropout"]) 
-
-    # model = STConvNet(
-    #     in_channels=model_parameters["in_channels"],
-    #     num_classes=model_parameters["num_classes"],
-    #     dropout=model_parameters["dropout"])
 
     return model.to(model_parameters["device"])
 
@@ -73,6 +68,7 @@ def initialize_training_components(model, model_parameters):
     optimizer = SGD(
         params=model.parameters(),
         lr=model_parameters["learning_rate"],
+        momentum=model_parameters["momentum"],
         weight_decay=model_parameters["weight_decay"])
     
     if model_parameters["lr_scheduler"] == "step":
@@ -184,8 +180,8 @@ def perform_step(
         for features, targets in dataloader:
             features, targets = transfer_to_device(features, targets, device)
             predictions = model(features)
-            # print(features.shape, targets.shape, predictions.shape)
-            accuracy = accuracy_fn(targets, predictions)
+
+            accuracy = accuracy_fn(targets, predictions)    
             accumulated_accuracy += accuracy
 
             loss = loss_fn(predictions, targets)

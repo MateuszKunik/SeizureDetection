@@ -34,8 +34,7 @@ config_manager = ConfigManager(configs_directory_path)
 model_params = config_manager.load_config("parameters_machine_learning")
 
 
-model_input_data = load_model_input_data(
-    primary_data_path, model_params["data_version"])
+model_input_data = load_model_input_data(primary_data_path, model_params)
 
 model_input_data = sample_data(model_input_data, model_params["data_parameters"]["data_fraction"])
 

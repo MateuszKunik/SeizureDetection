@@ -1,16 +1,28 @@
 import os
 import h5py
 import yaml
+import numpy as np
 import pandas as pd
 from datetime import datetime
 
 
-def load_model_input_data(data_directory_path: str, data_version: str) -> tuple:
-    data_file_path = os.path.join(data_directory_path, f"{data_version}.hdf5")
-    with h5py.File(data_file_path, 'r') as file:
-        data = (file["X"][:], file["Y"][:])
-        
-    return data
+def load_model_input_data(data_directory_path: str, parameters: dict) -> tuple:
+    data_file_path = os.path.join(
+        data_directory_path,
+        f"{parameters['data_version']}.hdf5")
+    
+    with h5py.File(data_file_path, "r") as file:
+        images = file["X"][:]
+        labels = file["Y"][:]
+
+    if parameters["data_dimensionality"] == 2:
+        images = images.reshape(-1, 64, 64, 1).transpose(0, 3, 1, 2)
+        labels = np.repeat(labels, 18)
+
+    elif parameters["data_dimensionality"] == 3:
+        images = images.transpose(0, 4, 1, 2, 3)
+
+    return images, labels
 
 
 def get_timestamp():
