@@ -1,6 +1,6 @@
 model_name : classifier
 data_version: eA_w03_c03_64_64
-data_dimensionality: 3
+convolution_method: 2D_samples
 
 mlflow_parameters:
   tracking_uri: http://127.0.0.1:5000
@@ -9,11 +9,11 @@ mlflow_parameters:
 
 data_parameters:
   seed: 0
-  data_fraction: 0.1
-  split_proportions: [0.8, 0.1, 0.1]
+  data_fraction: 1
+  split_proportions: [0.7, 0.2, 0.1]
 
   # Dataloaders parameters
-  batch_size: 16
+  batch_size: 64
   num_workers: 0
   pin_memory: True
   
@@ -25,26 +25,26 @@ model_parameters:
   device: cuda
   in_channels: 1
   num_classes: 2
-  dropout: 0.2
+  dropout: 0.3
 
-  num_epochs: 3
+  num_epochs: 100
 
-  optimizer: SGD
-  learning_rate: 0.003
-  momentum: 0.5
-  weight_decay: 0.000001
-
-  # optimizer: Adam
-  # learning_rate: 0.0003
+  # optimizer: SGD
+  # learning_rate: 0.0001
+  # momentum: 0.5
   # weight_decay: 0.000001
+
+  optimizer: Adam
+  learning_rate: 0.0001
+  weight_decay: 0.0001
 
   # lr_scheduler: cosine  
   # t_max: 30
   # eta_min: 0.00001
 
   lr_scheduler: step
-  step_size: 20
-  gamma: 0.3
+  step_size: 100
+  gamma: 0.1
 
   # Parameters for stoppers
   init_stopper_patience: 5

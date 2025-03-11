@@ -30,11 +30,11 @@ def create_single_dataloader(
     if is_train_type(subset_type):
         # miejsce do zdefiniowania lub przekazania augmentacji danych
         augmentation = v2.Compose([
-            v2.RandomRotation(45),
-            v2.RandomHorizontalFlip(p=0.1),
-            v2.RandomVerticalFlip(p=0.1),
+            v2.RandomRotation(90),
+            v2.RandomHorizontalFlip(p=0.5),
+            v2.RandomVerticalFlip(p=0.5),
 
-            # v2.RandomResizedCrop(64)
+            v2.RandomResizedCrop(64)
         ])
         dataset = CustomDataset(data_subset, transform, augmentation)
         shuffle = True

@@ -15,11 +15,14 @@ def load_model_input_data(data_directory_path: str, parameters: dict) -> tuple:
         images = file["X"][:]
         labels = file["Y"][:]
 
-    if parameters["data_dimensionality"] == 2:
+    if parameters["convolution_method"] == "2D_samples":
         images = images.reshape(-1, 64, 64, 1).transpose(0, 3, 1, 2)
         labels = np.repeat(labels, 18)
 
-    elif parameters["data_dimensionality"] == 3:
+    elif parameters["convolution_method"] == "2D_seq":
+        images = np.squeeze(images, axis=-1)
+
+    elif parameters["convolution_method"] == "3D_seq":
         images = images.transpose(0, 4, 1, 2, 3)
 
     return images, labels

@@ -54,7 +54,7 @@ def setup_and_train_model(
     
 
 def initialize_model(model_parameters):
-    model = R2Plus1DConvNet(
+    model = AlaResNet18(
         in_channels=model_parameters["in_channels"],
         num_classes=model_parameters["num_classes"],
         dropout=model_parameters["dropout"]) 
