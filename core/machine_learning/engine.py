@@ -1,7 +1,7 @@
 import torch
 from tqdm.auto import tqdm
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss
-from torch.optim import SGD
+from torch.optim import SGD, Adam
 from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR
 
 from .model_builder import TinyVGG, AlaResNet18, R2Plus1DConvNet, Simple2Plus1DConvNet, Simple3DConvNet
@@ -65,23 +65,32 @@ def initialize_model(model_parameters):
 def initialize_training_components(model, model_parameters):
     loss_fn, accuracy_fn = initialize_metrics()
     
-    optimizer = SGD(
-        params=model.parameters(),
-        lr=model_parameters["learning_rate"],
-        momentum=model_parameters["momentum"],
-        weight_decay=model_parameters["weight_decay"])
+    if model_parameters["optimizer"] == "SGD":
+        optimizer = SGD(
+            params=model.parameters(),
+            lr=model_parameters["learning_rate"],
+            momentum=model_parameters["momentum"],
+            weight_decay=model_parameters["weight_decay"]
+        )
+    elif model_parameters["optimizer"] == "Adam":
+        optimizer = Adam(
+            params=model.parameters(),
+            lr=model_parameters["learning_rate"],
+            weight_decay=model_parameters["weight_decay"]
+        )
     
     if model_parameters["lr_scheduler"] == "step":
         lr_scheduler = StepLR(
             optimizer,
             step_size=model_parameters["step_size"],
-            gamma=model_parameters["gamma"])
-        
+            gamma=model_parameters["gamma"]
+        )
     elif model_parameters["lr_scheduler"] == "cosine":
         lr_scheduler = CosineAnnealingLR(
             optimizer,
             T_max=model_parameters["t_max"],
-            eta_min=model_parameters["eta_min"])     
+            eta_min=model_parameters["eta_min"]
+        )     
     
     return loss_fn, accuracy_fn, optimizer, lr_scheduler
 
