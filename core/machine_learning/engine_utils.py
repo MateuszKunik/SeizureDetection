@@ -91,8 +91,8 @@ def handle_model_saving(
     log_saved_file_path(target_path)
 
 
-def save_model(target_dir, model):
-    torch.save(model.state_dict(), os.path.join(target_dir, "model.pth"))
+def save_model(target_dir, model, file_name="model.pth"):
+    torch.save(model.state_dict(), os.path.join(target_dir, file_name))
 
 
 def log_model_saved():

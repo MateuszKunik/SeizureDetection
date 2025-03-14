@@ -1,6 +1,6 @@
 model_name : classifier
 data_version: eA_w03_c03_64_64
-convolution_method: 2D_samples
+convolution_method: 3D_seq
 
 mlflow_parameters:
   tracking_uri: http://127.0.0.1:5000
@@ -9,8 +9,8 @@ mlflow_parameters:
 
 data_parameters:
   seed: 0
-  data_fraction: 1
-  split_proportions: [0.7, 0.2, 0.1]
+  data_fraction: 0.1
+  split_proportions: [0.8, 0.1, 0.1]
 
   # Dataloaders parameters
   batch_size: 64
@@ -18,7 +18,7 @@ data_parameters:
   pin_memory: True
   
   # Augmentation
-
+  shuffle_prob: 0
 
 # Training hyperparameters
 model_parameters:
@@ -27,7 +27,7 @@ model_parameters:
   num_classes: 2
   dropout: 0.3
 
-  num_epochs: 100
+  num_epochs: 3
 
   # optimizer: SGD
   # learning_rate: 0.0001

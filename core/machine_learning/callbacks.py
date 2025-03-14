@@ -1,15 +1,4 @@
 class InitStopper:
-    """
-    A simple early stopping mechanism based on the initial validation loss.
-
-    Args:
-        patience (int): Number of epochs to wait after initial validation loss has been reached. Default is 1.
-    
-    Attributes:
-        patience (int): Number of epochs to wait after initial validation loss has been reached.
-        init_validation_loss (float or None): Initial validation loss.
-        counter (int): Counter for tracking the number of epochs since initial validation loss.
-    """
     def __init__(self, patience=1):
         self.patience = patience
         self.init_validation_loss = None
@@ -28,19 +17,6 @@ class InitStopper:
 
 
 class EarlyStopper:
-    """
-    A more sophisticated early stopping mechanism based on minimum validation loss and minimum delta.
-
-    Args:
-        patience (int): Number of epochs to wait after minimum validation loss has been reached. Default is 1.
-        min_delta (float): Minimum change in validation loss to qualify as improvement. Default is 0.
-    
-    Attributes:
-        patience (int): Number of epochs to wait after minimum validation loss has been reached.
-        min_delta (float): Minimum change in validation loss to qualify as improvement.
-        counter (int): Counter for tracking the number of epochs since minimum validation loss.
-        min_validation_loss (float): Minimum validation loss encountered so far.
-    """
     def __init__(self, patience=1, min_delta=0):
         self.patience = patience
         self.min_delta = min_delta
@@ -56,3 +32,21 @@ class EarlyStopper:
             if self.counter >= self.patience:
                 return True
         return False
+
+
+# import torch
+
+# from .engine_utils import save_model
+
+# class ModelCheckpoint:
+#     def __init__(self, model, filepath="best_model.pth", mode="min"):
+#         self.model = model
+#         self.filepath = filepath
+#         self.mode = mode
+#         self.best_value = float("inf") if mode == "min" else float("-inf")
+    
+#     def save(self, validation_loss):
+#         if (self.mode == "min" and validation_loss < self.best_value) or \
+#            (self.mode == "max" and validation_loss > self.best_value):
+#             self.best_value = validation_loss
+            

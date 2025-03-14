@@ -3,6 +3,7 @@ from torch.utils.data import DataLoader
 from torchvision.transforms import v2
 
 from .custom_dataset import CustomDataset
+from .custom_augmentation import RandomChannelShuffle
 
 
 def create_dataloaders(data: dict, parameters: dict) -> tuple:
@@ -24,18 +25,10 @@ def create_single_dataloader(
         parameters: dict
     )  -> torch.utils.data.DataLoader:
     data_subset = get_data_subset(data, subset_type)
-    # miejsce do zdefiniowania lub przekazania transformacji danych
     transform = None 
 
     if is_train_type(subset_type):
-        # miejsce do zdefiniowania lub przekazania augmentacji danych
-        augmentation = v2.Compose([
-            v2.RandomRotation(90),
-            v2.RandomHorizontalFlip(p=0.5),
-            v2.RandomVerticalFlip(p=0.5),
-
-            v2.RandomResizedCrop(64)
-        ])
+        augmentation = RandomChannelShuffle(parameters["shuffle_prob"])
         dataset = CustomDataset(data_subset, transform, augmentation)
         shuffle = True
 

@@ -26,9 +26,9 @@ class AlaResNet18(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool2d(1)
 
         self.fc = nn.Sequential(
-            nn.Linear(512, 1000),
+            nn.Linear(512, 100),
             nn.ReLU(inplace=True),
-            nn.Linear(1000, num_classes)
+            nn.Linear(100, num_classes)
         )
 
 

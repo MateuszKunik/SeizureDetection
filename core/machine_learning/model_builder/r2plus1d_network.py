@@ -35,23 +35,23 @@ class R2Plus1DConvNet(nn.Module):
         super().__init__()
 
         self.conv1 = nn.Sequential(
-            Conv2Plus1D(in_channels, 64, (3, 7, 7), (1, 2, 2), (1, 3, 3)),
-            nn.BatchNorm3d(64),
+            Conv2Plus1D(in_channels, 16, (3, 7, 7), (1, 2, 2), (1, 3, 3)),
+            nn.BatchNorm3d(16),
             nn.ReLU(inplace=True))
         
-        self.conv2 = ResidualBlock(64, 64, dropout)
-        self.conv3 = ResidualBlock(64, 128, dropout)
-        self.conv4 = ResidualBlock(128, 256, dropout)
-        self.conv5 = ResidualBlock(256, 512, dropout)
+        self.conv2 = ResidualBlock(16, 16, dropout)
+        self.conv3 = ResidualBlock(16, 32, dropout)
+        self.conv4 = ResidualBlock(32, 64, dropout)
+        self.conv5 = ResidualBlock(64, 128, dropout)
 
         self.avgpool = nn.AdaptiveAvgPool3d((1, 1, 1))
 
         self.fc = nn.Sequential(
-            nn.Linear(512, 1000),
+            nn.Linear(128, 100),
             nn.ReLU(inplace=True),
             nn.Dropout(dropout),
 
-            nn.Linear(1000, num_classes)
+            nn.Linear(100, num_classes)
         )
 
 

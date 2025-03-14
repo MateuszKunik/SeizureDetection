@@ -23,7 +23,7 @@ from core.machine_learning import (
     log_model_artifacts
 )
 
-
+wiecej_danych = False
 
 project_manager = ProjectManager()
 configs_directory_path = project_manager.get_configs_directory_path()
@@ -44,6 +44,24 @@ setup_mlflow(model_params["mlflow_parameters"])
 with mlflow.start_run():
     data_splits = split_data_by_proportions(
         model_input_data, model_params["data_parameters"])
+
+    # plac budowy
+    if wiecej_danych:
+        import numpy as np
+
+        X_train, y_train = data_splits["train"]
+        # print(X_train.shape), print(y_train.shape)
+
+        rng = np.random.default_rng(1024)
+        X_train_perm = rng.permutation(X_train, axis = 2)
+
+        X_train = np.concatenate([X_train, X_train_perm])
+        y_train = np.concatenate([y_train, y_train])
+
+        # print(X_train.shape), print(y_train.shape)
+
+        data_splits["train"] = X_train, y_train
+    #####
 
     train_data, valid_data, test_data = create_dataloaders(
         data_splits, model_params["data_parameters"])

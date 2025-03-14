@@ -54,7 +54,7 @@ def setup_and_train_model(
     
 
 def initialize_model(model_parameters):
-    model = AlaResNet18(
+    model = R2Plus1DConvNet(
         in_channels=model_parameters["in_channels"],
         num_classes=model_parameters["num_classes"],
         dropout=model_parameters["dropout"]) 
@@ -128,12 +128,12 @@ def train_and_validate_model(
         train_metrics = perform_training_step(
             model, train_dataloader, loss_fn, accuracy_fn, optimizer, lr_scheduler)
 
-        valid_metrics = perform_validation_step(model, valid_dataloader, loss_fn, accuracy_fn)
+        valid_metrics = perform_validation_step(
+            model, valid_dataloader, loss_fn, accuracy_fn)
 
         log_epoch_results(epoch, train_metrics, valid_metrics)
         log_training_metrics(train_metrics, valid_metrics, epoch)
-        update_results_tracker(
-            results_tracker, train_metrics, valid_metrics)
+        update_results_tracker(results_tracker, train_metrics, valid_metrics)
 
         if is_stopper_triggered(init_stopper, valid_metrics[0]):
             log_early_stopping("init_stopper")
@@ -142,6 +142,28 @@ def train_and_validate_model(
         if is_stopper_triggered(early_stopper, valid_metrics[0]):
             log_early_stopping("early_stopper")
             break
+
+    #     # plac budowy
+    #     # start
+    #     slownik = {}
+
+    #     model_performance = valid_metrics[0]
+
+    #     mode = "min"
+    #     best_performance = float("inf") if mode == "min" else float("-inf")
+
+    #     if (mode == "min" and model_performance < best_performance) or \
+    #         (mode == "max" and model_performance > best_performance):
+    #         best_performance = model_performance
+            
+    #         slownik.append({
+    #             "performance": best_performance,
+    #             "model_weights": model.state_dict()
+    #         })
+
+    # slownik
+
+    #     # koniec
 
     log_training_complete("regression_model", epoch+1)
 

@@ -8,7 +8,7 @@ def sample_data(data: tuple, fraction: float) -> tuple:
         x, y = data
         sample_size = int(len(x) * fraction)
 
-        indices = random.sample(range(len(x)), sample_size)  # Losowy wybór indeksów
+        indices = random.sample(range(len(x)), sample_size)
         x_subset = np.array([x[i] for i in indices])
         y_subset = np.array([y[i] for i in indices])
 
