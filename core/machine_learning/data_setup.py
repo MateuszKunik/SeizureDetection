@@ -28,7 +28,12 @@ def create_single_dataloader(
     transform = None 
 
     if is_train_type(subset_type):
-        augmentation = RandomChannelShuffle(parameters["shuffle_prob"])
+        augmentation = v2.Compose([
+            RandomChannelShuffle(parameters["shuffle_prob"]),
+            v2.RandomInvert(parameters["invert_prob"]),
+            # v2.GaussianBlur(kernel_size=3),
+            # v2.GaussianNoise(mean=0, sigma=0.05),
+        ])
         dataset = CustomDataset(data_subset, transform, augmentation)
         shuffle = True
 

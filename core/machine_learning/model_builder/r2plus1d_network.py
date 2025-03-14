@@ -42,48 +42,44 @@ class R2Plus1DConvNet(nn.Module):
         self.conv2 = ResidualBlock(16, 16, dropout)
         self.conv3 = ResidualBlock(16, 32, dropout)
         self.conv4 = ResidualBlock(32, 64, dropout)
-        self.conv5 = ResidualBlock(64, 128, dropout)
+        # self.conv5 = ResidualBlock(64, 128, dropout)
 
         self.avgpool = nn.AdaptiveAvgPool3d((1, 1, 1))
 
         self.fc = nn.Sequential(
-            nn.Linear(128, 100),
+            nn.Linear(64, 10),
             nn.ReLU(inplace=True),
             nn.Dropout(dropout),
-
-            nn.Linear(100, num_classes)
-        )
-
+            nn.Linear(10, num_classes))
 
 
     def forward(self, x):
-        # print(f"input shape: {x.shape}")
+        # input shape: torch.Size([64, 1, 18, 64, 64])
 
         x = self.conv1(x)
         # print(f"conv1 output shape: {x.shape}")
+        # conv1 output shape: torch.Size([64, 8, 18, 32, 32])
 
         x = self.conv2(x)
         # print(f"conv2 output shape: {x.shape}")
+        # conv2 output shape: torch.Size([64, 8, 9, 16, 16])
 
         x = self.conv3(x)
         # print(f"conv3 output shape: {x.shape}")
+        # conv3 output shape: torch.Size([64, 16, 5, 8, 8])
 
         x = self.conv4(x)
         # print(f"conv4 output shape: {x.shape}")
+        # conv4 output shape: torch.Size([64, 32, 3, 4, 4])
 
-        x = self.conv5(x)
+        # x = self.conv5(x)
         # print(f"conv5 output shape: {x.shape}")
+        # conv5 output shape: torch.Size([64, 64, 1, 2, 2])
 
         x = self.avgpool(x)
-        # print(f"avgpool output shape: {x.shape}")
-
         x = torch.flatten(x, start_dim=1)
-        # print(f"flatten output shape: {x.shape}")
 
-        x = self.fc(x)
-        # print(f"fc output shape: {x.shape}")
-
-        return x
+        return self.fc(x)
 
 
 
