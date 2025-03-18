@@ -9,7 +9,7 @@ mlflow_parameters:
 
 data_parameters:
   seed: 0
-  data_fraction: 1
+  data_fraction: 0.2
   split_proportions: [0.8, 0.1, 0.1]
 
   # Dataloaders parameters
@@ -19,7 +19,7 @@ data_parameters:
   
   # Augmentation
   shuffle_prob: 1
-  invert_prob: 0.2
+  invert_prob: 0.1
 
 # Training hyperparameters
 model_parameters:
@@ -28,7 +28,7 @@ model_parameters:
   num_classes: 2
   dropout: 0.1
 
-  num_epochs: 100
+  num_epochs: 3
 
   # optimizer: SGD
   # learning_rate: 0.0001

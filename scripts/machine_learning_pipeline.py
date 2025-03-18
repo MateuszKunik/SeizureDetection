@@ -20,7 +20,8 @@ from core.machine_learning import (
     handle_model_saving,
     evaluate_model_performance,
     prepare_directory,
-    log_model_artifacts
+    log_model_artifacts,
+    print_classification_report
 )
 
 wiecej_danych = False
@@ -36,7 +37,8 @@ model_params = config_manager.load_config("parameters_machine_learning")
 
 model_input_data = load_model_input_data(primary_data_path, model_params)
 
-model_input_data = sample_data(model_input_data, model_params["data_parameters"]["data_fraction"])
+model_input_data = sample_data(
+    model_input_data, model_params["data_parameters"]["data_fraction"])
 
 
 setup_mlflow(model_params["mlflow_parameters"])
@@ -69,13 +71,15 @@ with mlflow.start_run():
     model, optimizer, lr_scheduler, results = setup_and_train_model(
         train_data, valid_data, model_params["model_parameters"])
 
-    evaluation_metrics = evaluate_model_performance(model, test_data)
-
     directory_path = prepare_directory(
         model_directory_path, model_params["model_name"])
 
     log_model_artifacts(directory_path)
-    summarize_training(results, evaluation_metrics)
+    summarize_training(results)
+
+    classification_report = evaluate_model_performance(model, test_data)
+    print_classification_report(classification_report)
+
     loss_figure = plot_training_curves(results, metric="loss")
     accuracy_figure = plot_training_curves(results, metric="accuracy")
 
@@ -87,3 +91,5 @@ with mlflow.start_run():
         figure2=accuracy_figure,
         target_path=directory_path,
         params=model_params)
+    
+

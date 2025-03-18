@@ -1,16 +1,16 @@
 import torch
 from tqdm.auto import tqdm
-from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss
+from torch.nn import CrossEntropyLoss
 from torch.optim import SGD, Adam
 from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR
 
-from .model_builder import TinyVGG, AlaResNet18, R2Plus1DConvNet, Simple2Plus1DConvNet, Simple3DConvNet
+from .model_builder import R2Plus1DConvNet
 from .accuracy import BinaryAccuracy
 from .callbacks import InitStopper, EarlyStopper
 
 from .engine_utils import (
     get_device_from_model,
-    transfer_to_device,
+    transfer_data_to_device,
     log_training_start,
     log_epoch_results,
     initialize_results_tracker,
@@ -20,6 +20,11 @@ from .engine_utils import (
     is_stopper_triggered,
     log_early_stopping,
     log_training_complete,
+    is_training_mode,
+    get_context_manager,
+    calculate_average,
+    fetch_labels_and_predictions,
+    prepare_classification_report
 )
 
 
@@ -165,7 +170,7 @@ def train_and_validate_model(
 
     #     # koniec
 
-    log_training_complete("regression_model", epoch+1)
+    log_training_complete("seizure detection model", epoch+1)
 
     return results_tracker
 
@@ -178,14 +183,6 @@ def perform_training_step(model, dataloader, loss_fn, accuracy_fn, optimizer, lr
 
 
 def perform_validation_step(model, dataloader, loss_fn, accuracy_fn):
-    loss, accuracy = perform_step(
-        model, dataloader, loss_fn, accuracy_fn)
-
-    return loss, accuracy
-
-
-def evaluate_model_performance(model, dataloader):
-    loss_fn, accuracy_fn = initialize_metrics()
     loss, accuracy = perform_step(
         model, dataloader, loss_fn, accuracy_fn)
 
@@ -209,7 +206,7 @@ def perform_step(
 
     with get_context_manager(training_mode):
         for features, targets in dataloader:
-            features, targets = transfer_to_device(features, targets, device)
+            features, targets = transfer_data_to_device(features, targets, device)
             predictions = model(features)
 
             accuracy = accuracy_fn(targets, predictions)    
@@ -232,13 +229,8 @@ def perform_step(
     return average_loss, average_accuracy
 
 
-def is_training_mode(optimizer) -> bool:
-    return bool(optimizer)
+def evaluate_model_performance(model, dataloader):
+    loss_fn, _ = initialize_metrics()
+    labels, predictions = fetch_labels_and_predictions(model, dataloader)
 
-
-def get_context_manager(training_mode):
-    return torch.set_grad_enabled(True) if training_mode else torch.inference_mode()
-
-
-def calculate_average(metric, dataloader):
-        return metric / len(dataloader)
+    return prepare_classification_report(labels, predictions, loss_fn)

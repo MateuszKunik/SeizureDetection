@@ -2,6 +2,13 @@ import os
 import torch
 import mlflow
 import matplotlib.pyplot as plt
+from sklearn.metrics import (
+    confusion_matrix,
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score
+)
 
 from core.utils.utilities import (
     generate_directory_path,
@@ -16,9 +23,12 @@ def get_device_from_model(model):
     return next(model.parameters()).device
 
 
-def transfer_to_device(features, targets, device):
-    features = features.to(device)
-    targets = targets.to(device)
+def transfer_to_device(tensor, device):
+    return tensor.to(device)
+
+def transfer_data_to_device(features, targets, device):
+    features = transfer_to_device(features, device)
+    targets = transfer_to_device(targets, device)
 
     return features, targets
 
@@ -43,14 +53,10 @@ def plot_training_curves(results: dict, metric: str) -> plt.Figure:
     ax.set_title(f"{metric.capitalize()} Curves for Training and Validation Data")
     ax.set_xlabel("Epochs")
     ax.set_ylabel(f"{metric.capitalize()}")
-    # ax.set_xlim((0, num_epochs + 1))
-    # ax.set_ylim((0, 100))
-    # ax.axis("equal")
     ax.grid(True)
     ax.legend()
 
     return fig
-
 
 
 def prepare_directory(target_path: str, directory_name: str) -> str:
@@ -185,7 +191,7 @@ def log_training_complete(model_name: str, total_epochs: int) -> None:
     print(f"Training of '{model_name}' completed after {total_epochs} epochs.\n")
 
 
-def summarize_training(results: dict, evaluation: tuple) -> None:
+def summarize_training(results: dict) -> None:
     print("-- -- Training Summary: -- --")
     print(f"Number of Epochs: {len(results['loss']['train'])}\n")
 
@@ -195,6 +201,69 @@ def summarize_training(results: dict, evaluation: tuple) -> None:
     print(f"Final Training Accuracy: {results['accuracy']['train'][-1]:.4f}")
     print(f"Final Validation Accuracy: {results['accuracy']['valid'][-1]:.4f}\n")
 
+
+def is_training_mode(optimizer) -> bool:
+    return bool(optimizer)
+
+
+def get_context_manager(training_mode):
+    return torch.set_grad_enabled(True) if training_mode else torch.inference_mode()
+
+
+def calculate_average(metric, dataloader):
+        return metric / len(dataloader)
+
+
+def fetch_labels_and_predictions(model, dataloader):
+    device = get_device_from_model(model)
+    model.eval()
+
+    all_labels, all_predictions = [], []
+
+    with torch.inference_mode():
+        for features, labels in dataloader:
+            features, labels = transfer_data_to_device(features, labels, device)
+            predictions = model(features)
+
+            all_labels.append(labels)
+            all_predictions.append(predictions)
+
+    all_labels = torch.cat(all_labels, dim=0)
+    all_predictions = torch.cat(all_predictions, dim=0)
+
+    return all_labels, all_predictions
+
+
+def prepare_classification_report(actual_labels, predictions, loss_fn):
+    loss = loss_fn(predictions, actual_labels).item()
+    predicted_labels = compute_predicted_labels(predictions)
+
+    actual_labels = transfer_to_device(actual_labels, "cpu")
+    predicted_labels = transfer_to_device(predicted_labels, "cpu")
+
+    return {
+        "loss": loss,
+        "matrix": confusion_matrix(actual_labels, predicted_labels),
+        "accuracy": accuracy_score(actual_labels, predicted_labels),
+        "precision": precision_score(actual_labels, predicted_labels),
+        "recall": recall_score(actual_labels, predicted_labels),
+        "f1_score": f1_score(actual_labels, predicted_labels)
+    }
+
+
+def compute_predicted_labels(logits):
+    label_probabilities = torch.softmax(logits, dim=1)
+    predicted_labels = torch.argmax(label_probabilities, dim=1) 
+
+    return predicted_labels
+
+
+def print_classification_report(report):
     print("-- -- Model Evaluation: -- --")
-    print(f"Test Loss: {evaluation[0]:.4f}")
-    print(f"Test Accuracy: {evaluation[1]:.4f}\n")
+    print(f"Loss: {report['loss']:.4f}")
+    print(f"Accuracy: {report['accuracy']:.4f}\n")
+
+    print(f"Confusion Matrix:\n {report['matrix']}\n")
+    print(f"Precision Score: {report['precision']:.4f}")
+    print(f"Recall Score: {report['recall']:.4f}")
+    print(f"F1 Score: {report['f1_score']:.4f}\n")
