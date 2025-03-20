@@ -34,19 +34,26 @@ class EarlyStopper:
         return False
 
 
-# import torch
+class ModelCheckpoint:
+    def __init__(self, maximize=False):
+        self.maximize = maximize
+        self.best_metric_value = float("-inf") if maximize else float("inf")
+        self.best_model_weights = None
+        
+    def update_weights(self, model, metric_value):
+        if self.outperforms_current(metric_value):
+            self.best_metric_value = metric_value
+            self.best_model_weights = model.state_dict()
+            print(f"znaleziono nowy: {self.best_metric_value}")
 
-# from .engine_utils import save_model
-
-# class ModelCheckpoint:
-#     def __init__(self, model, filepath="best_model.pth", mode="min"):
-#         self.model = model
-#         self.filepath = filepath
-#         self.mode = mode
-#         self.best_value = float("inf") if mode == "min" else float("-inf")
     
-#     def save(self, validation_loss):
-#         if (self.mode == "min" and validation_loss < self.best_value) or \
-#            (self.mode == "max" and validation_loss > self.best_value):
-#             self.best_value = validation_loss
-            
+    def outperforms_current(self, metric_value):
+        if self.maximize:
+            return self.best_metric_value < metric_value
+        else:
+            return self.best_metric_value > metric_value
+        
+
+    def get_best_weights(self):
+        print(f"best_metric_value: {self.best_metric_value}")
+        return self.best_model_weights

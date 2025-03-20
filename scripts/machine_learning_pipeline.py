@@ -68,7 +68,7 @@ with mlflow.start_run():
     train_data, valid_data, test_data = create_dataloaders(
         data_splits, model_params["data_parameters"])
 
-    model, optimizer, lr_scheduler, results = setup_and_train_model(
+    model, weights, optimizer, lr_scheduler, results = setup_and_train_model(
         train_data, valid_data, model_params["model_parameters"])
 
     directory_path = prepare_directory(
@@ -79,6 +79,32 @@ with mlflow.start_run():
 
     classification_report = evaluate_model_performance(model, test_data)
     print_classification_report(classification_report)
+
+    
+    # plac budowy
+    # import os
+    # import torch
+
+    # weights = torch.load(
+    #     os.path.join(
+    #         os.path.join(model_directory_path, "classifier_2025-03-14_19-03"),
+    #         "model.pth"
+    #     )
+    # )
+
+    # for (param1, param2) in zip(model.state_dict().values(), weights.values()):
+    #     if not torch.equal(param1, param2):
+    #         print("nie są")
+    #     else:
+    #         print("są")
+
+
+    model.load_state_dict(weights)
+
+    better_report = evaluate_model_performance(model, test_data)
+    print_classification_report(better_report)
+    ###
+
 
     loss_figure = plot_training_curves(results, metric="loss")
     accuracy_figure = plot_training_curves(results, metric="accuracy")

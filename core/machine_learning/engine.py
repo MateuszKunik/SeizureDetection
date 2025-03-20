@@ -6,7 +6,7 @@ from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR
 
 from .model_builder import R2Plus1DConvNet
 from .accuracy import BinaryAccuracy
-from .callbacks import InitStopper, EarlyStopper
+from .callbacks import InitStopper, EarlyStopper, ModelCheckpoint
 
 from .engine_utils import (
     get_device_from_model,
@@ -41,7 +41,7 @@ def setup_and_train_model(
     loss_fn, accuracy_fn, optimizer, lr_scheduler = initialize_training_components(
         classification_model, model_parameters)
 
-    init_stopper, early_stopper = initialize_callbacks(model_parameters)
+    init_stopper, early_stopper, model_checkpoint = initialize_callbacks(model_parameters)
 
     results = train_and_validate_model(
         model=classification_model,
@@ -53,9 +53,12 @@ def setup_and_train_model(
         lr_scheduler=lr_scheduler,
         init_stopper=init_stopper,
         early_stopper=early_stopper,
+        model_checkpoint=model_checkpoint,
         num_epochs=model_parameters["num_epochs"])
 
-    return classification_model, optimizer, lr_scheduler, results
+    best_model_weights = model_checkpoint.get_best_weights()
+
+    return classification_model, best_model_weights, optimizer, lr_scheduler, results
     
 
 def initialize_model(model_parameters):
@@ -115,12 +118,15 @@ def initialize_callbacks(model_parameters):
         patience=model_parameters["early_stopper_patience"],
         min_delta=model_parameters["early_stopper_min_delta"])
     
-    return init_stopper, early_stopper
+    model_checkpoint = ModelCheckpoint(
+        maximize=model_parameters["maximize"])
+    
+    return init_stopper, early_stopper, model_checkpoint
 
 
 def train_and_validate_model(
         model, train_dataloader, valid_dataloader, loss_fn, accuracy_fn,
-        optimizer, lr_scheduler, init_stopper=None, early_stopper=None,
+        optimizer, lr_scheduler, init_stopper=None, early_stopper=None, model_checkpoint=None,
         num_epochs=100,
 ):
 
@@ -148,27 +154,7 @@ def train_and_validate_model(
             log_early_stopping("early_stopper")
             break
 
-    #     # plac budowy
-    #     # start
-    #     slownik = {}
-
-    #     model_performance = valid_metrics[0]
-
-    #     mode = "min"
-    #     best_performance = float("inf") if mode == "min" else float("-inf")
-
-    #     if (mode == "min" and model_performance < best_performance) or \
-    #         (mode == "max" and model_performance > best_performance):
-    #         best_performance = model_performance
-            
-    #         slownik.append({
-    #             "performance": best_performance,
-    #             "model_weights": model.state_dict()
-    #         })
-
-    # slownik
-
-    #     # koniec
+        model_checkpoint.update_weights(model, valid_metrics[0])
 
     log_training_complete("seizure detection model", epoch+1)
 
