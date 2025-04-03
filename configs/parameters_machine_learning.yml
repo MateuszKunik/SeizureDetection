@@ -1,5 +1,5 @@
 model_name : classifier
-data_version: eA_w10_c20_64_64
+data_version: eA/eA_w10_c20_64_64
 convolution_method: 3D_seq
 
 mlflow_parameters:

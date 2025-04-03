@@ -15,16 +15,10 @@ from core.machine_learning import (
     split_data_by_proportions,
     create_dataloaders,
     setup_and_train_model,
-    plot_training_curves,
-    summarize_training,
-    handle_model_saving,
+    handle_training_artifacts_saving,
     evaluate_model_performance,
-    prepare_directory,
-    log_model_artifacts,
-    print_classification_report
 )
 
-wiecej_danych = False
 
 project_manager = ProjectManager()
 configs_directory_path = project_manager.get_configs_directory_path()
@@ -47,75 +41,18 @@ with mlflow.start_run():
     data_splits = split_data_by_proportions(
         model_input_data, model_params["data_parameters"])
 
-    # plac budowy
-    if wiecej_danych:
-        import numpy as np
-
-        X_train, y_train = data_splits["train"]
-        # print(X_train.shape), print(y_train.shape)
-
-        rng = np.random.default_rng(1024)
-        X_train_perm = rng.permutation(X_train, axis = 2)
-
-        X_train = np.concatenate([X_train, X_train_perm])
-        y_train = np.concatenate([y_train, y_train])
-
-        # print(X_train.shape), print(y_train.shape)
-
-        data_splits["train"] = X_train, y_train
-    #####
-
     train_data, valid_data, test_data = create_dataloaders(
         data_splits, model_params["data_parameters"])
 
-    model, weights, optimizer, lr_scheduler, results = setup_and_train_model(
+    model, weights, optimizer, lr_scheduler, training_metrics = setup_and_train_model(
         train_data, valid_data, model_params["model_parameters"])
 
-    directory_path = prepare_directory(
-        model_directory_path, model_params["model_name"])
+    evaluation_report = evaluate_model_performance(model, test_data)
 
-    log_model_artifacts(directory_path)
-    summarize_training(results)
-
-    classification_report = evaluate_model_performance(model, test_data)
-    print_classification_report(classification_report)
-
-    
-    # plac budowy
-    # import os
-    # import torch
-
-    # weights = torch.load(
-    #     os.path.join(
-    #         os.path.join(model_directory_path, "classifier_2025-03-14_19-03"),
-    #         "model.pth"
-    #     )
-    # )
-
-    # for (param1, param2) in zip(model.state_dict().values(), weights.values()):
-    #     if not torch.equal(param1, param2):
-    #         print("nie są")
-    #     else:
-    #         print("są")
-
-
-    model.load_state_dict(weights)
-
-    better_report = evaluate_model_performance(model, test_data)
-    print_classification_report(better_report)
-    ###
-
-
-    loss_figure = plot_training_curves(results, metric="loss")
-    accuracy_figure = plot_training_curves(results, metric="accuracy")
-
-    handle_model_saving(
-        model=model,
-        optimizer=optimizer,
-        lr_scheduler=lr_scheduler,
-        figure1=loss_figure,
-        figure2=accuracy_figure,
-        target_path=directory_path,
-        params=model_params)
-    
-
+    handle_training_artifacts_saving(
+        model_directory_path, 
+        model,
+        optimizer, lr_scheduler,
+        training_metrics,
+        model_params,
+        evaluation_report)

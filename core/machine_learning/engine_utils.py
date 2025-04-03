@@ -1,6 +1,7 @@
 import os
 import torch
 import mlflow
+import pickle
 import matplotlib.pyplot as plt
 from sklearn.metrics import (
     confusion_matrix,
@@ -66,35 +67,46 @@ def prepare_directory(target_path: str, directory_name: str) -> str:
     return directory_path
 
 
-def handle_model_saving(
+def handle_training_artifacts_saving(
+        target_path: str,
         model,
         optimizer,
         lr_scheduler,
-        figure1: plt.Figure,
-        figure2: plt.Figure,
-        target_path: str,
-        params: dict = None        
+        training_metrics: dict,
+        parameters: dict,
+        evaluation_report: dict
 ) -> None:
     """
     opis
     """
-    save_model(target_path, model)
+    directory_path = prepare_directory(target_path, parameters["model_name"])
+    
+    log_model_artifacts(directory_path)
+
+    save_model(directory_path, model)
     log_model_saved()
 
     checkpoints = create_checkpoints(optimizer, lr_scheduler)
-    save_checkpoints(target_path, checkpoints)
+    save_checkpoints(directory_path, checkpoints)
     log_checkpoints_saved()
 
-    save_plot(target_path, figure1, file_name="loss.png")
-    save_plot(target_path, figure2, file_name="accuracy.png")
-    log_plot_saved()
+    loss_figure = plot_training_curves(training_metrics, metric="loss")
+    save_plot(directory_path, loss_figure, file_name="loss.png")
 
-    if params:
-        config_file_name = "model_parameters.txt"
-        save_config_params(target_path, params, config_file_name)
-        log_params_saved(config_file_name)
+    accuracy_figure = plot_training_curves(training_metrics, metric="accuracy")
+    save_plot(directory_path, accuracy_figure, file_name="accuracy.png")
 
-    log_saved_file_path(target_path)
+    print_training_summary(training_metrics)
+    save_training_summary(directory_path, training_metrics)
+
+    print_evaluation_report(evaluation_report)
+    save_evaluation_report(directory_path, evaluation_report)
+
+    config_file_name = "model_parameters.txt"
+    save_config_params(directory_path, parameters, config_file_name)
+    log_params_saved(config_file_name)
+
+    log_saved_file_path(directory_path)
 
 
 def save_model(target_dir, model, file_name="model.pth"):
@@ -191,7 +203,7 @@ def log_training_complete(model_name: str, total_epochs: int) -> None:
     print(f"Training of '{model_name}' completed after {total_epochs} epochs.\n")
 
 
-def summarize_training(results: dict) -> None:
+def print_training_summary(results: dict) -> None:
     print("-- -- Training Summary: -- --")
     print(f"Number of Epochs: {len(results['loss']['train'])}\n")
 
@@ -258,7 +270,7 @@ def compute_predicted_labels(logits):
     return predicted_labels
 
 
-def print_classification_report(report):
+def print_evaluation_report(report):
     print("-- -- Model Evaluation: -- --")
     print(f"Loss: {report['loss']:.4f}")
     print(f"Accuracy: {report['accuracy']:.4f}\n")
@@ -267,3 +279,13 @@ def print_classification_report(report):
     print(f"Precision Score: {report['precision']:.4f}")
     print(f"Recall Score: {report['recall']:.4f}")
     print(f"F1 Score: {report['f1_score']:.4f}\n")
+
+
+def save_training_summary(target_dir, training_metrics):
+    with open(os.path.join(target_dir, "historical_training_metrics.pkl"), "wb") as file:
+        pickle.dump(training_metrics, file)    
+
+
+def save_evaluation_report(target_dir, evaluation_report):
+    with open(os.path.join(target_dir, "evaluation_report.pkl"), "wb") as file:
+        pickle.dump(evaluation_report, file)    

@@ -43,7 +43,7 @@ def setup_and_train_model(
 
     init_stopper, early_stopper, model_checkpoint = initialize_callbacks(model_parameters)
 
-    results = train_and_validate_model(
+    training_metrics = train_and_validate_model(
         model=classification_model,
         train_dataloader=train_dataloader,
         valid_dataloader=valid_dataloader,
@@ -58,7 +58,7 @@ def setup_and_train_model(
 
     best_model_weights = model_checkpoint.get_best_weights()
 
-    return classification_model, best_model_weights, optimizer, lr_scheduler, results
+    return classification_model, best_model_weights, optimizer, lr_scheduler, training_metrics
     
 
 def initialize_model(model_parameters):
@@ -156,7 +156,7 @@ def train_and_validate_model(
 
         model_checkpoint.update_weights(model, valid_metrics[0])
 
-    log_training_complete("seizure detection model", epoch+1)
+    log_training_complete("Seizure Detection Model", epoch+1)
 
     return results_tracker
 
