@@ -1,12 +1,11 @@
 import torch
 from tqdm.auto import tqdm
-from torch.nn import CrossEntropyLoss
-from torch.optim import SGD, Adam
-from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR
 
-from .model_builder import R2Plus1DConvNet
-from .accuracy import BinaryAccuracy
-from .callbacks import InitStopper, EarlyStopper, ModelCheckpoint
+from .engine_setup import (
+    initialize_model,
+    initialize_training_components,
+    initialize_callbacks
+)
 
 from .engine_utils import (
     get_device_from_model,
@@ -23,8 +22,7 @@ from .engine_utils import (
     is_training_mode,
     get_context_manager,
     calculate_average,
-    fetch_labels_and_predictions,
-    prepare_classification_report
+    create_checkpoints
 )
 
 
@@ -36,15 +34,15 @@ def setup_and_train_model(
     """
     opis
     """
-    classification_model = initialize_model(model_parameters)
+    model = initialize_model(model_parameters)
 
     loss_fn, accuracy_fn, optimizer, lr_scheduler = initialize_training_components(
-        classification_model, model_parameters)
+        model, model_parameters)
 
     init_stopper, early_stopper, model_checkpoint = initialize_callbacks(model_parameters)
 
     training_metrics = train_and_validate_model(
-        model=classification_model,
+        model=model,
         train_dataloader=train_dataloader,
         valid_dataloader=valid_dataloader,
         loss_fn=loss_fn,
@@ -56,73 +54,13 @@ def setup_and_train_model(
         model_checkpoint=model_checkpoint,
         num_epochs=model_parameters["num_epochs"])
 
-    best_model_weights = model_checkpoint.get_best_weights()
+    best_training_step = model_checkpoint.get_best_training_step()
 
-    return classification_model, best_model_weights, optimizer, lr_scheduler, training_metrics
+    checkpoints = create_checkpoints(
+        optimizer, lr_scheduler, training_metrics, best_training_step)
+
+    return model, checkpoints
     
-
-def initialize_model(model_parameters):
-    model = R2Plus1DConvNet(
-        in_channels=model_parameters["in_channels"],
-        num_classes=model_parameters["num_classes"],
-        dropout=model_parameters["dropout"]) 
-
-    return model.to(model_parameters["device"])
-
-
-def initialize_training_components(model, model_parameters):
-    loss_fn, accuracy_fn = initialize_metrics()
-    
-    if model_parameters["optimizer"] == "SGD":
-        optimizer = SGD(
-            params=model.parameters(),
-            lr=model_parameters["learning_rate"],
-            momentum=model_parameters["momentum"],
-            weight_decay=model_parameters["weight_decay"]
-        )
-    elif model_parameters["optimizer"] == "Adam":
-        optimizer = Adam(
-            params=model.parameters(),
-            lr=model_parameters["learning_rate"],
-            weight_decay=model_parameters["weight_decay"]
-        )
-    
-    if model_parameters["lr_scheduler"] == "step":
-        lr_scheduler = StepLR(
-            optimizer,
-            step_size=model_parameters["step_size"],
-            gamma=model_parameters["gamma"]
-        )
-    elif model_parameters["lr_scheduler"] == "cosine":
-        lr_scheduler = CosineAnnealingLR(
-            optimizer,
-            T_max=model_parameters["t_max"],
-            eta_min=model_parameters["eta_min"]
-        )     
-    
-    return loss_fn, accuracy_fn, optimizer, lr_scheduler
-
-
-def initialize_metrics():
-    loss_fn = CrossEntropyLoss()
-    accuracy_fn = BinaryAccuracy()
-
-    return loss_fn, accuracy_fn
-    
-
-def initialize_callbacks(model_parameters):
-    init_stopper = InitStopper(
-        patience=model_parameters["init_stopper_patience"])
-    
-    early_stopper = EarlyStopper(
-        patience=model_parameters["early_stopper_patience"],
-        min_delta=model_parameters["early_stopper_min_delta"])
-    
-    model_checkpoint = ModelCheckpoint(
-        maximize=model_parameters["maximize"])
-    
-    return init_stopper, early_stopper, model_checkpoint
-
 
 def train_and_validate_model(
         model, train_dataloader, valid_dataloader, loss_fn, accuracy_fn,
@@ -135,7 +73,7 @@ def train_and_validate_model(
     log_training_start()
     log_training_params(num_epochs, optimizer, lr_scheduler)
 
-    for epoch in tqdm(range(num_epochs)):
+    for epoch in tqdm(range(1, num_epochs + 1)):
         train_metrics = perform_training_step(
             model, train_dataloader, loss_fn, accuracy_fn, optimizer, lr_scheduler)
 
@@ -154,9 +92,9 @@ def train_and_validate_model(
             log_early_stopping("early_stopper")
             break
 
-        model_checkpoint.update_weights(model, valid_metrics[0])
+        model_checkpoint.update_training_step(model, epoch, valid_metrics[0])
 
-    log_training_complete("Seizure Detection Model", epoch+1)
+    log_training_complete("Seizure Detection Model", epoch)
 
     return results_tracker
 
@@ -213,10 +151,3 @@ def perform_step(
     average_accuracy = calculate_average(accumulated_accuracy, dataloader)
 
     return average_loss, average_accuracy
-
-
-def evaluate_model_performance(model, dataloader):
-    loss_fn, _ = initialize_metrics()
-    labels, predictions = fetch_labels_and_predictions(model, dataloader)
-
-    return prepare_classification_report(labels, predictions, loss_fn)

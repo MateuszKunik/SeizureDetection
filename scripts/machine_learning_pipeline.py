@@ -16,7 +16,7 @@ from core.machine_learning import (
     create_dataloaders,
     setup_and_train_model,
     handle_training_artifacts_saving,
-    evaluate_model_performance,
+    generate_evaluation_report,
 )
 
 
@@ -26,33 +26,38 @@ primary_data_path = project_manager.get_primary_data_path()
 model_directory_path = project_manager.get_model_data_path()
 
 config_manager = ConfigManager(configs_directory_path)
-model_params = config_manager.load_config("parameters_machine_learning")
+model_parameters = config_manager.load_config("parameters_machine_learning")
 
 
-model_input_data = load_model_input_data(primary_data_path, model_params)
+model_input_data = load_model_input_data(primary_data_path, model_parameters)
 
 model_input_data = sample_data(
-    model_input_data, model_params["data_parameters"]["data_fraction"])
+    model_input_data, model_parameters["data_parameters"]["data_fraction"])
 
 
-setup_mlflow(model_params["mlflow_parameters"])
+setup_mlflow(model_parameters["mlflow_parameters"])
 
 with mlflow.start_run():
     data_splits = split_data_by_proportions(
-        model_input_data, model_params["data_parameters"])
+        model_input_data, model_parameters["data_parameters"])
 
-    train_data, valid_data, test_data = create_dataloaders(
-        data_splits, model_params["data_parameters"])
+    train_dataloader, valid_dataloader, test_dataloader = create_dataloaders(
+        data_splits, model_parameters["data_parameters"])
 
-    model, weights, optimizer, lr_scheduler, training_metrics = setup_and_train_model(
-        train_data, valid_data, model_params["model_parameters"])
+    classification_model, checkpoints = setup_and_train_model(
+        train_dataloader,
+        valid_dataloader,
+        model_parameters["model_parameters"])
 
-    evaluation_report = evaluate_model_performance(model, test_data)
+    evaluation_report = generate_evaluation_report(
+        classification_model,
+        test_dataloader,
+        checkpoints["best_training_step"],
+        model_parameters["model_parameters"])
 
     handle_training_artifacts_saving(
-        model_directory_path, 
-        model,
-        optimizer, lr_scheduler,
-        training_metrics,
-        model_params,
-        evaluation_report)
+        classification_model,
+        checkpoints,
+        model_parameters,
+        evaluation_report,
+        model_directory_path)

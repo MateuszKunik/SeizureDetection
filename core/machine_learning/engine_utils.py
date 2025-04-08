@@ -1,23 +1,25 @@
 import os
 import torch
+import torch.nn as nn
 import mlflow
 import pickle
 import matplotlib.pyplot as plt
+
 from sklearn.metrics import (
     confusion_matrix,
     accuracy_score,
     precision_score,
     recall_score,
-    f1_score
-)
+    f1_score)
 
 from core.utils.utilities import (
     generate_directory_path,
     ensure_directory_exists,
     save_config_params,
     log_params_saved,
-    log_saved_file_path
-)
+    log_saved_file_path)
+
+from .engine_setup import initialize_metrics
 
 
 def get_device_from_model(model):
@@ -26,6 +28,7 @@ def get_device_from_model(model):
 
 def transfer_to_device(tensor, device):
     return tensor.to(device)
+
 
 def transfer_data_to_device(features, targets, device):
     features = transfer_to_device(features, device)
@@ -39,7 +42,7 @@ def log_training_start():
 
 
 def log_epoch_results(epoch, train_metrics, valid_metrics):
-    print(f"\nEpoch: {epoch + 1}")
+    print(f"\nEpoch: {epoch}")
     print(f"Training loss: {train_metrics[0]:.4f} | Validation loss: {valid_metrics[0]:.4f}")
     print(f"Training accuracy: {train_metrics[1]:.4f} | Validation accuracy: {valid_metrics[1]:.4f}\n")
 
@@ -68,28 +71,27 @@ def prepare_directory(target_path: str, directory_name: str) -> str:
 
 
 def handle_training_artifacts_saving(
+        model: nn.Module,
+        checkpoints: dict,
+        training_parameters: dict,
+        evaluation_report: dict,
         target_path: str,
-        model,
-        optimizer,
-        lr_scheduler,
-        training_metrics: dict,
-        parameters: dict,
-        evaluation_report: dict
 ) -> None:
     """
     opis
     """
-    directory_path = prepare_directory(target_path, parameters["model_name"])
+    directory_path = prepare_directory(
+        target_path, training_parameters["model_name"])
     
     log_model_artifacts(directory_path)
 
     save_model(directory_path, model)
     log_model_saved()
 
-    checkpoints = create_checkpoints(optimizer, lr_scheduler)
     save_checkpoints(directory_path, checkpoints)
     log_checkpoints_saved()
 
+    training_metrics = checkpoints["training_metrics"]
     loss_figure = plot_training_curves(training_metrics, metric="loss")
     save_plot(directory_path, loss_figure, file_name="loss.png")
 
@@ -99,11 +101,10 @@ def handle_training_artifacts_saving(
     print_training_summary(training_metrics)
     save_training_summary(directory_path, training_metrics)
 
-    print_evaluation_report(evaluation_report)
     save_evaluation_report(directory_path, evaluation_report)
 
     config_file_name = "model_parameters.txt"
-    save_config_params(directory_path, parameters, config_file_name)
+    save_config_params(directory_path, training_parameters, config_file_name)
     log_params_saved(config_file_name)
 
     log_saved_file_path(directory_path)
@@ -117,10 +118,12 @@ def log_model_saved():
     print("Model has been successfully saved.")
 
     
-def create_checkpoints(optimizer, lr_scheduler) -> dict:
+def create_checkpoints(optimizer, scheduler, metrics, best_step) -> dict:
     return {
-        "optimizer": optimizer.state_dict(),
-        "scheduler": lr_scheduler,
+        "optimizer": optimizer,
+        "lr_scheduler": scheduler,
+        "training_metrics": metrics,
+        "best_training_step": best_step
     }
 
 
@@ -226,6 +229,34 @@ def calculate_average(metric, dataloader):
         return metric / len(dataloader)
 
 
+def generate_evaluation_report(model, dataloader, best_training_step, parameters):
+    evaluation_report = evaluate_model_performance(model, dataloader, "final")
+    print_evaluation_report(evaluation_report)
+    
+    # zrobić funkcje z pobierania najleppszej epoki \/
+    best_epoch = best_training_step["epoch"]
+
+    if best_epoch < parameters["num_epochs"]:
+        # zrobić funkcję z komunikatu \/
+        print(f"The best model weights from epoch {best_epoch} have been loaded.\n")
+        model.load_state_dict(best_training_step["weights"])
+
+        evaluation_report = evaluate_model_performance(model, dataloader, "best")
+        print_evaluation_report(evaluation_report)
+    
+    return evaluation_report
+
+
+def evaluate_model_performance(model, dataloader, evaluation_stage):
+    loss_fn, _ = initialize_metrics()
+    labels, predictions = fetch_labels_and_predictions(model, dataloader)
+
+    report = prepare_classification_report(labels, predictions, loss_fn)
+    report["evaluation_stage"] = evaluation_stage
+
+    return report
+
+
 def fetch_labels_and_predictions(model, dataloader):
     device = get_device_from_model(model)
     model.eval()
@@ -271,7 +302,8 @@ def compute_predicted_labels(logits):
 
 
 def print_evaluation_report(report):
-    print("-- -- Model Evaluation: -- --")
+    print("-- -- Model Evaluation -- --")
+    print(f"-- Evaluation Stage: {report['evaluation_stage']} --")
     print(f"Loss: {report['loss']:.4f}")
     print(f"Accuracy: {report['accuracy']:.4f}\n")
 
@@ -282,10 +314,10 @@ def print_evaluation_report(report):
 
 
 def save_training_summary(target_dir, training_metrics):
-    with open(os.path.join(target_dir, "historical_training_metrics.pkl"), "wb") as file:
-        pickle.dump(training_metrics, file)    
+    with open(os.path.join(target_dir, "training_metrics.pkl"), "wb") as file:
+        pickle.dump(training_metrics, file)
 
 
 def save_evaluation_report(target_dir, evaluation_report):
     with open(os.path.join(target_dir, "evaluation_report.pkl"), "wb") as file:
-        pickle.dump(evaluation_report, file)    
+        pickle.dump(evaluation_report, file)
