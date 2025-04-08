@@ -1,3 +1,6 @@
+import copy
+
+
 class InitStopper:
     def __init__(self, patience=1):
         self.patience = patience
@@ -37,23 +40,26 @@ class EarlyStopper:
 class ModelCheckpoint:
     def __init__(self, maximize=False):
         self.maximize = maximize
+        self.best_epoch = 0
         self.best_metric_value = float("-inf") if maximize else float("inf")
         self.best_model_weights = None
-        
-    def update_weights(self, model, metric_value):
-        if self.outperforms_current(metric_value):
-            self.best_metric_value = metric_value
-            self.best_model_weights = model.state_dict()
-            print(f"znaleziono nowy: {self.best_metric_value}")
 
-    
+
+    def update_training_step(self, model, epoch, metric_value):
+        if self.outperforms_current(metric_value):
+            self.best_epoch = epoch
+            self.best_metric_value = metric_value
+            self.best_model_weights = copy.deepcopy(model.state_dict())
+
     def outperforms_current(self, metric_value):
         if self.maximize:
             return self.best_metric_value < metric_value
         else:
             return self.best_metric_value > metric_value
         
-
-    def get_best_weights(self):
-        print(f"best_metric_value: {self.best_metric_value}")
-        return self.best_model_weights
+    def get_best_training_step(self):
+        return {
+            "epoch": self.best_epoch,
+            "metric": self.best_metric_value,
+            "weights": self.best_model_weights
+        }
